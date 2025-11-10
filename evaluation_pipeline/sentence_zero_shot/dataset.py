@@ -38,7 +38,7 @@ class CompletionRankingDataset(Dataset):
             self.image_token = self.tokenizer.image_token
 
         # Load and process the data
-        print("DEBUG: read files with ", args)
+        # print("DEBUG: read files with ", args)
         self.data: list[dict[str, str | int | list[str] | list[None] | Image]] = read_files(args)
         #### DEBUG TO SPEED VQA UP
         if args.task == "vqa": 
