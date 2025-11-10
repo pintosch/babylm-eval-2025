@@ -40,8 +40,8 @@ cp evaluation_pipeline/devbench/manifests/gram-trog.csv $DB_PREFIX/assets/gram-t
 cp evaluation_pipeline/devbench/data_human/gram-trog_human.csv $DB_PREFIX/evals/gram-trog/human.csv
 
 ## Visual Vocabulary
-mkdir $DB_PREFIX/assets/lex-viz_vocab
+mkdir -p $DB_PREFIX/assets/lex-viz_vocab # fix potential issue during folder creation
 mkdir $DB_PREFIX/evals/lex-viz_vocab
-ln -s `realpath $DB_PREFIX/assets/sem-things/object_images_CC0/` $DB_PREFIX/assets/lex-viz_vocab/images
+ln -s "$(realpath $DB_PREFIX/assets/sem-things/object_images_CC0/)" $DB_PREFIX/assets/lex-viz_vocab/images # fix potential issue during image referencing
 cp evaluation_pipeline/devbench/manifests/lex-viz_vocab.csv $DB_PREFIX/assets/lex-viz_vocab/manifest.csv
 cp evaluation_pipeline/devbench/data_human/lex-viz_vocab_human.csv $DB_PREFIX/evals/lex-viz_vocab/human.csv

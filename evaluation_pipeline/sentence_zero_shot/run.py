@@ -1,7 +1,7 @@
 # File: run_zero_shot.py
 # ----------------------
 from __future__ import annotations
-
+import pprint
 import pathlib
 import json
 import argparse
@@ -78,6 +78,7 @@ def process_results(args: argparse.ArgumentParser, results: dict):
         args (argparse.ArgumentParser): ArgumentParser object used to determine task
         results (dict): Results obtained from running compute_results
     """
+    pprint.pp(results)
     # Compute accuracies
     accuracies = {temp : {} for temp in results}
     for temp, temp_results in results.items():
@@ -169,10 +170,14 @@ def main():
     args.output_path.mkdir(parents=True, exist_ok=True)
 
     # Get results
+    #print("DEBUG: Before get_model()", flush=True)
     model = get_model(args)
+    #print("DEBUG: After get_model()", flush=True)
     dataloader = get_dataloader(args)
     temperatures = get_temperatures(args)
     results, predictions = compute_results(args, model, dataloader, temperatures)
+    print("DEBUG: results = ", results)
+    print("DEBUG: predictions = ", predictions)
 
     # Process results
     if "wug" in args.task:

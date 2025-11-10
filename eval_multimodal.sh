@@ -33,3 +33,4 @@ python -m evaluation_pipeline.devbench.eval --model $MODEL_PATH \
 
 
 
+# ./eval_multimodal.sh <path_to_model> <architecture (causal/mntp/mlm/enc_dec_mask/enc_dec_prefix)> <model_type (git/flamingo/llava/flava/clip/blip/siglip/bridgetower/vilt/cvcl)> <image_model>
