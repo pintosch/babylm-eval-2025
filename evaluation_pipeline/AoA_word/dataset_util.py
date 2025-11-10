@@ -35,7 +35,7 @@ class TextPreprocessor:
         self, dataset_name: str, split: str, batch_size: int = 1000
     ):
         """Load and process dataset in batches."""
-        dataset = load_dataset(dataset_name, split=split)
+        dataset = load_dataset(dataset_name, split=split, trust_remote_code=True)
         if "text" not in dataset.column_names:
             raise ValueError(
                 f"'text' column not found in the dataset. Available columns: {dataset.column_names}"
