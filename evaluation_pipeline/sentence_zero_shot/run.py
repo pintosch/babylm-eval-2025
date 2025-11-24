@@ -7,7 +7,7 @@ import json
 import argparse
 from _io import TextIOWrapper
 
-from transformers import AutoModelForCausalLM, AutoModelForMaskedLM, AutoModelForSeq2SeqLM
+from transformers import AutoModelForCausalLM, AutoModelForMaskedLM, AutoModelForSeq2SeqLM, AutoModelForVision2Seq
 import torch
 
 from evaluation_pipeline.sentence_zero_shot.dataset import get_dataloader
@@ -47,7 +47,10 @@ def get_model(args: argparse.ArgumentParser):
     if args.backend in ["mlm", "mntp"]:
         model = AutoModelForMaskedLM.from_pretrained(args.model_path_or_name, trust_remote_code=True, revision=args.revision_name)
     elif args.backend == "causal":
-        model = AutoModelForCausalLM.from_pretrained(args.model_path_or_name, trust_remote_code=True, revision=args.revision_name)
+        if "qwen" in args.model_path_or_name.lower(): # if model is qwen vlm
+            model = AutoModelForVision2Seq.from_pretrained(args.model_path_or_name, trust_remote_code=True, revision=args.revision_name)
+        else:
+            model = AutoModelForCausalLM.from_pretrained(args.model_path_or_name, trust_remote_code=True, revision=args.revision_name)
     elif args.backend in ["enc_dec_mask", "enc_dec_prefix"]:
         model = AutoModelForSeq2SeqLM.from_pretrained(args.model_path_or_name, trust_remote_code=True, revision=args.revision_name)
     else:

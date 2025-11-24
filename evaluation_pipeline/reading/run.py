@@ -1,4 +1,5 @@
 from transformers import AutoModelForCausalLM, AutoModelForMaskedLM, AutoTokenizer, AutoModelForSeq2SeqLM, AutoProcessor
+from transformers import AutoModelForVision2Seq
 from evaluation_pipeline.reading.evaluation_functions import get_p2_mntp, get_p2, get_p2_mlm, get_p2_enc_dec
 from tqdm import tqdm
 import pandas as pd
@@ -48,7 +49,10 @@ if __name__ == "__main__":
     df["item"] = df["item"].fillna("None")
 
     if args.backend == "causal":
-        model = AutoModelForCausalLM.from_pretrained(args.model_path_or_name, trust_remote_code=True, revision=args.revision_name)
+        if "qwen" in args.model_path_or_name.lower(): # if model is qwen vlm
+            model = AutoModelForVision2Seq.from_pretrained(args.model_path_or_name, trust_remote_code=True, revision=args.revision_name)
+        else:
+            model = AutoModelForCausalLM.from_pretrained(args.model_path_or_name, trust_remote_code=True, revision=args.revision_name)
     elif args.backend in ["mlm", "mntp"]:
         model = AutoModelForMaskedLM.from_pretrained(args.model_path_or_name, trust_remote_code=True, revision=args.revision_name)
     elif args.backend == "enc_dec":

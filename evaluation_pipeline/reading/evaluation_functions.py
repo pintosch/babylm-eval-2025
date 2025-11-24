@@ -1,6 +1,8 @@
 import torch
 import numpy as np
 
+from transformers import Qwen3VLProcessor
+
 from evaluation_pipeline.utils import get_logits
 
 DEVICE = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
@@ -79,7 +81,24 @@ def get_p_enc_dec(sentence, word, model, tokenizer):  # gets p of word (word) gi
 
 
 def get_p2(sentence, word, model, tokenizer):  # as get_p if len(tokenizer(word)) == 1; else, sums logP of subword tokens
+    ### DEBUG
+    # print("get_p2 called with sentence:", sentence, "and word:", word, flush=True)
+    # print("Tokenizer is a ", type(tokenizer), flush=True)
+    ###
+    
+    ## FIX: Hacky way to ensure compatibility with different tokenizer/processor interfaces (QWEN 3 VL)
+    #if isinstance(tokenizer, Qwen3VLProcessor):
+        # fallback for processors/tokenizers that expect keyword arguments (e.g., Qwen3VLProcessor-like)
+        #inpts = tokenizer(text=sentence, images=None, videos=None, return_tensors="pt").to(DEVICE)
+    #else:
+        # standard tokenizer call
     inpts = tokenizer(sentence, return_tensors="pt").to(DEVICE)
+
+    
+    ### DEBUG
+    # print("Tokenizer output:", inpts, flush=True)
+    ###
+    
     with torch.no_grad():
         outputs = model(**inpts)
         logits = get_logits(outputs)[:, -1, :].cpu()
