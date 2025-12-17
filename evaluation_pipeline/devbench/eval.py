@@ -5,6 +5,7 @@ from evaluation_pipeline.devbench.comparison.viz_vocab import get_scores as get_
 import numpy as np
 import os
 import argparse
+import torch
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Evaluate a model on DevBench tasks.')
@@ -124,6 +125,16 @@ if __name__ == "__main__":
                 args.model, trust_remote_code=True),
             processor=AutoProcessor.from_pretrained(args.model,
                                                     trust_remote_code=True),
+        )
+    
+    elif args.model_type == "qwen":
+        from evaluation_pipeline.devbench.model_classes.qwen import QwenEvalModel
+        from transformers import AutoProcessor, AutoModelForVision2Seq
+
+        eval_model = QwenEvalModel(
+            model=AutoModelForVision2Seq.from_pretrained(args.model, trust_remote_code=True),
+            processor=AutoProcessor.from_pretrained(args.model, trust_remote_code=True),
+            device="cuda" if torch.cuda.is_available() else "cpu",
         )
 
     model_name = args.model.split("/")[-1]
