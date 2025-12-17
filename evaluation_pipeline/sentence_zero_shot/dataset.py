@@ -23,6 +23,8 @@ class CompletionRankingDataset(Dataset):
         self.backend: str = args.backend
         self.processor: ProcessorMixin = AutoProcessor.from_pretrained(args.model_path_or_name, padding_side="right", revision=args.revision_name, trust_remote_code=True)
         self.tokenizer = self.processor.tokenizer if hasattr(self.processor, "tokenizer") else self.processor
+        self.is_qwen_vl = "qwen" in args.model_path_or_name.lower()
+        print("DEBUG: is_qwen_vl = ", self.is_qwen_vl)
 
         if self.tokenizer.pad_token_id is None:
             if self.backend == "causal":
@@ -35,7 +37,13 @@ class CompletionRankingDataset(Dataset):
             with open("evaluation_pipeline/templates/image_template.json", "r") as image_template_file:
                 image_templates = json.load(image_template_file)
                 self.image_template = image_templates[args.image_template]
-            self.image_token = self.tokenizer.image_token
+            self.image_token = self.tokenizer.image_token # Note: for qwen tokenizer, tokenizer.image_token does not exist
+            
+        # Special handling of image token for Qwen VL models
+        if self.is_qwen_vl:
+            self.image_token = self.processor.image_token 
+            self.image_template = "{image_token}{text}" # loaded from templates/image_template.json
+            print("DEBUG: detected Qwen VL model, using image token: ", self.image_token, " with template: ", self.image_template)
 
         # Load and process the data
         # print("DEBUG: read files with ", args)
@@ -74,12 +82,17 @@ class CompletionRankingDataset(Dataset):
             attention_mask = tokenizer_output["attention_mask"]
             offset_mapping = tokenizer_output['offset_mapping']
             embed_image = torch.FloatTensor(tokenizer_output["pixel_values"]) if image is not None else None
+            if self.is_qwen_vl:
+                image_grid_thw = tokenizer_output["image_grid_thw"] if image is not None and "image_grid_thw" in tokenizer_output else None
             if len(tokens) == 1 and len(sentence) != 0:
                 if sentence_tokens:
                     sentence_tokens = sentence_tokens[0]
                 tokens = tokens[0]
                 attention_mask = attention_mask[0]
                 offset_mapping = offset_mapping[0]
+                if self.is_qwen_vl:
+                    if image_grid_thw is not None:
+                        image_grid_thw = image_grid_thw[0]
 
             # Phrase mask (to determine the exact tokens associated with the completion/suffix)
             start_idx = len(tokens) - len(sentence_tokens)
@@ -98,6 +111,8 @@ class CompletionRankingDataset(Dataset):
             processed_sentence_dict[f'sentence_{sentence_idx}_attn_mask'] = torch.LongTensor(attention_mask)
             processed_sentence_dict[f'sentence_{sentence_idx}_phrase_mask'] = torch.LongTensor(phrase_mask)
             processed_sentence_dict[f'sentence_{sentence_idx}_image'] = embed_image
+            if self.is_qwen_vl:
+                processed_sentence_dict[f'sentence_{sentence_idx}_image_grid_thw'] = torch.LongTensor(image_grid_thw) if image_grid_thw is not None else None
 
         return processed_sentence_dict
 
@@ -401,9 +416,12 @@ def get_collate_fn(args: argparse.ArgumentParser, pad_idx: int):
         args (argparse.ArgumentParser): Arguments to determine model backend
         pad_idx (int): What token to use as the padding index
     """
+    # Check if model is from Qwen VL family
+    is_qwen_vl = "qwen" in args.model_path_or_name.lower()
+    print("DEBUG: is_qwen_vl = ", is_qwen_vl)
 
     if args.backend == "causal":
-        return get_causal_collate_fn(pad_idx)
+        return get_causal_collate_fn(pad_idx, is_qwen_vl)
     elif args.backend in ["mlm", "mntp"]:
         return get_mlm_collate_fn(pad_idx)
     elif args.backend == "enc_dec_mask":
@@ -412,7 +430,7 @@ def get_collate_fn(args: argparse.ArgumentParser, pad_idx: int):
         return get_enc_dec_prefix_collate_fn(pad_idx)
 
 
-def get_causal_collate_fn(pad_idx):
+def get_causal_collate_fn(pad_idx, is_qwen_vl=False):
     def collate_fn(batch):
         # First pad the tensors
         num_sentences = len([key for key in batch[0][1].keys() if key.endswith("tokens")])
@@ -438,7 +456,15 @@ def get_causal_collate_fn(pad_idx):
                 images = None
             else:
                 images = torch.cat(images, dim=0)
-
+                
+            # if exist, get image_grid_thw
+            if is_qwen_vl:
+                image_grid_thws = [item[1][f'sentence_{sentence_idx}_image_grid_thw'] for item in batch]
+                if all(thw is not None for thw in image_grid_thws):
+                    sentence_dict_with_padding[f'sentence_{sentence_idx}_image_grid_thw'] = torch.stack(image_grid_thws, dim=0)
+                else:
+                    sentence_dict_with_padding[f'sentence_{sentence_idx}_image_grid_thw'] = None
+            
         # Next handle the labels and metadata
         sentence_dict = [item[0] for item in batch]
         labels = [item[2] for item in batch]

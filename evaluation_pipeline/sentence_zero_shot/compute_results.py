@@ -121,11 +121,23 @@ def compute_causal_results(args, model, dataloader, temperatures):
                     attention_mask=sentence_dict[f"{prefix}_attn_mask"].to(DEVICE),
                 )
             else:
-                logits = model(
-                    input_ids=sentence_dict[f"{prefix}_inputs"].to(DEVICE),
-                    attention_mask=sentence_dict[f"{prefix}_attn_mask"].to(DEVICE),
-                    pixel_values=images.to(DEVICE),
-                )
+                # print("DEBUG: input_ids", sentence_dict[f"{prefix}_inputs"])
+                # print("DEBUG: input_ids shape", sentence_dict[f"{prefix}_inputs"].shape)
+                # print("DEBUG: attention_mask", sentence_dict[f"{prefix}_attn_mask"])
+                # print("DEBUG: attention_mask shape", sentence_dict[f"{prefix}_attn_mask"].shape)
+                # print("DEBUG: images", images)
+                # print("DEBUG: images shape", images.shape)
+                # print("DEBUG: image_grid_thw", sentence_dict.get(f"{prefix}_image_grid_thw"))
+                # print("DEBUG: image_grid_thw shape", sentence_dict.get(f"{prefix}_image_grid_thw").shape if sentence_dict.get(f"{prefix}_image_grid_thw") is not None else None)
+                model_kwargs = {
+                    "input_ids": sentence_dict[f"{prefix}_inputs"].to(DEVICE),
+                    "attention_mask": sentence_dict[f"{prefix}_attn_mask"].to(DEVICE),
+                    "pixel_values": images.to(DEVICE),
+                }
+                if "qwen" in args.model_path_or_name.lower():
+                    model_kwargs["image_grid_thw"] = sentence_dict[f"{prefix}_image_grid_thw"].to(DEVICE) if sentence_dict.get(f"{prefix}_image_grid_thw") is not None else None
+                
+                logits = model(**model_kwargs)
             if isinstance(logits, tuple):
                 logits = logits[0]  # BxTxV
             else:
