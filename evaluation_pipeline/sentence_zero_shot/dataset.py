@@ -50,7 +50,7 @@ class CompletionRankingDataset(Dataset):
         self.data: list[dict[str, str | int | list[str] | list[None] | Image]] = read_files(args)
         #### DEBUG TO SPEED VQA UP
         if args.task == "vqa": 
-            self.data = self.data[:300]  # only keep the first 300 examples for VQA
+            self.data = self.data[:1000]  # only keep the first 1000 examples for VQA
 
     def __len__(self: CompletionRankingDataset):
         return len(self.data)
