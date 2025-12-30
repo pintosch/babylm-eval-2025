@@ -134,7 +134,8 @@ def compute_causal_results(args, model, dataloader, temperatures):
                     "attention_mask": sentence_dict[f"{prefix}_attn_mask"].to(DEVICE),
                     "pixel_values": images.to(DEVICE),
                 }
-                if "qwen" in args.model_path_or_name.lower():
+                # Use model_variant parameter to check if this is a Qwen VL model
+                if args.model_variant and args.model_variant.lower() == "qwen":
                     model_kwargs["image_grid_thw"] = sentence_dict[f"{prefix}_image_grid_thw"].to(DEVICE) if sentence_dict.get(f"{prefix}_image_grid_thw") is not None else None
                 
                 logits = model(**model_kwargs)

@@ -23,7 +23,8 @@ class CompletionRankingDataset(Dataset):
         self.backend: str = args.backend
         self.processor: ProcessorMixin = AutoProcessor.from_pretrained(args.model_path_or_name, padding_side="right", revision=args.revision_name, trust_remote_code=True)
         self.tokenizer = self.processor.tokenizer if hasattr(self.processor, "tokenizer") else self.processor
-        self.is_qwen_vl = "qwen" in args.model_path_or_name.lower()
+        # Use model_variant parameter to determine if this is a Qwen VL model
+        self.is_qwen_vl = args.model_variant and args.model_variant.lower() == "qwen" if hasattr(args, 'model_variant') and args.model_variant else False
         print("DEBUG: is_qwen_vl = ", self.is_qwen_vl)
 
         if self.tokenizer.pad_token_id is None:
@@ -416,8 +417,8 @@ def get_collate_fn(args: argparse.ArgumentParser, pad_idx: int):
         args (argparse.ArgumentParser): Arguments to determine model backend
         pad_idx (int): What token to use as the padding index
     """
-    # Check if model is from Qwen VL family
-    is_qwen_vl = "qwen" in args.model_path_or_name.lower()
+    # Check if model is Qwen VL based on model_variant parameter
+    is_qwen_vl = args.model_variant and args.model_variant.lower() == "qwen" if hasattr(args, 'model_variant') and args.model_variant else False
     print("DEBUG: is_qwen_vl = ", is_qwen_vl)
 
     if args.backend == "causal":

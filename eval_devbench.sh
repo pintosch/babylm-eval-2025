@@ -2,10 +2,10 @@
 
 MODEL_PATH=$1
 MODEL_TYPE=$2
-IMAGE_MODEL={$3:-$MODEL_PATH}
+IMAGE_MODEL=${3:-$MODEL_PATH}
 
 # Supported MODEL_TYPE values:
-# git, flamingo, llava, flava, clip, blip, siglip, bridgetower, vilt, cvcl
+# git, flamingo, llava, flava, clip, blip, siglip, bridgetower, vilt, cvcl, qwen
 
 # If you need a different MODEL_TYPE, implement it in the `evaluation_pipeline/devbench/model_classes` folder.
 # (See other files in that folder for examples.)

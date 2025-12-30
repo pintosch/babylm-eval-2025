@@ -22,6 +22,7 @@ def parse_args():
     parser.add_argument("--data_path", required=True, type=pathlib.Path, help="Path to file containing the lambada dataset, we expect it to be in a JSONL format.")
     parser.add_argument("--model_path_or_name", required=True, type=str, help="The path/name to/of the huggingface folder/repository.")
     parser.add_argument("--backend", required=True, type=str, help="The evaluation backend strategy.", choices=["mlm", "mntp", "causal", "enc_dec"])
+    parser.add_argument("--model_variant", default=None, type=str, help="Model variant (e.g., 'qwen', 'flamingo', etc.). If not provided, will not use special handling.")
     parser.add_argument("--number_of_mask_tokens_to_append", default=3, type=int, help="When using either mlm or mntp, the number of mask tokens to append to approximate causal generation.")
     parser.add_argument("--revision_name", default=None, type=str, help="Name of the checkpoint/version of the model to test. (If None, the main will be used)")
 
@@ -49,7 +50,8 @@ if __name__ == "__main__":
     df["item"] = df["item"].fillna("None")
 
     if args.backend == "causal":
-        if "qwen" in args.model_path_or_name.lower(): # if model is qwen vlm
+        # Check if model is a Qwen VL model based on model_variant parameter
+        if args.model_variant and args.model_variant.lower() == "qwen":
             model = AutoModelForVision2Seq.from_pretrained(args.model_path_or_name, trust_remote_code=True, revision=args.revision_name)
         else:
             model = AutoModelForCausalLM.from_pretrained(args.model_path_or_name, trust_remote_code=True, revision=args.revision_name)

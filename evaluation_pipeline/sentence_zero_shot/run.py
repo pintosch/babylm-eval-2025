@@ -30,6 +30,7 @@ def _parse_arguments():
     parser.add_argument("--image_split", default=None, type=str, help="The data split from a HuggingFace repository to use for the images source.")
     parser.add_argument("--image_template", default=None, type=str, help="Template of how to imbed the image to the text. (In cases where this is not handled within the model).")
 
+    parser.add_argument("--model_variant", default=None, type=str, help="Model variant (e.g., 'qwen', 'flamingo', etc.). If not provided, will not use special handling.")
     parser.add_argument("--revision_name", default=None, type=str, help="Name of the checkpoint/version of the model to test. (If None, the main will be used)")
 
     parser.add_argument("--min_temperature", default=1.0, type=float, help="Minimum temperature to apply to the logits.")
@@ -47,7 +48,8 @@ def get_model(args: argparse.ArgumentParser):
     if args.backend in ["mlm", "mntp"]:
         model = AutoModelForMaskedLM.from_pretrained(args.model_path_or_name, trust_remote_code=True, revision=args.revision_name)
     elif args.backend == "causal":
-        if "qwen" in args.model_path_or_name.lower(): # if model is qwen vlm
+        # Check if model is a Qwen VL model based on model_variant parameter
+        if args.model_variant and args.model_variant.lower() == "qwen":
             model = AutoModelForVision2Seq.from_pretrained(args.model_path_or_name, trust_remote_code=True, revision=args.revision_name)
         else:
             model = AutoModelForCausalLM.from_pretrained(args.model_path_or_name, trust_remote_code=True, revision=args.revision_name)

@@ -2,12 +2,13 @@
 MODEL_PATH=$1
 REVISION_NAME=$2
 BACKEND=$3
-EVAL_DIR=${4:-"evaluation_data/fast_eval"}
-SKIP_EXISTING=${5:-true}  # <-- new flag: set to false to force re-run all tasks
+MODEL_VARIANT=${4:-""}  # Optional model variant
+EVAL_DIR=${5:-"evaluation_data/fast_eval"}
+SKIP_EXISTING=${6:-true}  # <-- new flag: set to false to force re-run all tasks
 OUTPUT_DIR="results"
 
 if [[ -z "$MODEL_PATH" || -z "$REVISION_NAME" || -z "$BACKEND" ]]; then
-    echo "Usage: $0 MODEL_PATH REVISION_NAME BACKEND [EVAL_DIR] [SKIP_EXISTING=true|false]"
+    echo "Usage: $0 MODEL_PATH REVISION_NAME BACKEND [MODEL_VARIANT] [EVAL_DIR] [SKIP_EXISTING=true|false]"
     exit 1
 fi
 
@@ -34,13 +35,25 @@ run_if_needed() {
         echo "✅ Skipping ${task} (${dataset_name}) — results already exist at ${output_path}"
     else
         echo "🚀 Running ${task} (${dataset_name})..."
-        python -m evaluation_pipeline.sentence_zero_shot.run \
-            --model_path_or_name "$MODEL_PATH" \
-            --backend "$BACKEND" \
-            --task "$task" \
-            --data_path "$dataset_dir" \
-            --save_predictions \
-            --revision_name "$REVISION_NAME"
+        # Build optional model_variant parameter
+        if [[ -n "$MODEL_VARIANT" ]]; then
+            python -m evaluation_pipeline.sentence_zero_shot.run \
+                --model_path_or_name "$MODEL_PATH" \
+                --backend "$BACKEND" \
+                --task "$task" \
+                --data_path "$dataset_dir" \
+                --save_predictions \
+                --revision_name "$REVISION_NAME" \
+                --model_variant "$MODEL_VARIANT"
+        else
+            python -m evaluation_pipeline.sentence_zero_shot.run \
+                --model_path_or_name "$MODEL_PATH" \
+                --backend "$BACKEND" \
+                --task "$task" \
+                --data_path "$dataset_dir" \
+                --save_predictions \
+                --revision_name "$REVISION_NAME"
+        fi
     fi
 }
 
@@ -63,9 +76,19 @@ if [[ "$SKIP_EXISTING" == "true" && -d "$READING_OUTPUT_PATH" && -n "$(ls -A "$R
     echo "✅ Skipping reading task — results already exist at ${READING_OUTPUT_PATH}"
 else
     echo "🚀 Running reading task..."
-    python -m evaluation_pipeline.reading.run \
-        --model_path_or_name "$MODEL_PATH" \
-        --backend "$BACKEND_READ" \
-        --data_path "${EVAL_DIR}/reading/reading_data.csv" \
-        --revision_name "$REVISION_NAME"
+    # Build optional model_variant parameter
+    if [[ -n "$MODEL_VARIANT" ]]; then
+        python -m evaluation_pipeline.reading.run \
+            --model_path_or_name "$MODEL_PATH" \
+            --backend "$BACKEND_READ" \
+            --data_path "${EVAL_DIR}/reading/reading_data.csv" \
+            --revision_name "$REVISION_NAME" \
+            --model_variant "$MODEL_VARIANT"
+    else
+        python -m evaluation_pipeline.reading.run \
+            --model_path_or_name "$MODEL_PATH" \
+            --backend "$BACKEND_READ" \
+            --data_path "${EVAL_DIR}/reading/reading_data.csv" \
+            --revision_name "$REVISION_NAME"
+    fi
 fi
