@@ -244,6 +244,39 @@ def display_runs_summary(all_runs: Dict[str, Dict[str, Dict[str, float]]]) -> No
     print("=" * total_width)
 
 
+def get_evaluation_results(run_name: str) -> Dict[str, float]:
+    """
+    Get evaluation results for a specific run by name.
+
+    Args:
+        run_name: Name of the run (will be appended to RESULTS_DIR)
+
+    Returns:
+        Dictionary with task names and their corresponding scores.
+        Example: {
+            "blimp_filtered": 85.5,
+            "ewok": 92.3,
+            ...
+        }
+    """
+    run_path = RESULTS_DIR / run_name
+
+    if not run_path.exists():
+        print(f"Error: Run directory not found at {run_path}")
+        return {}
+
+    results = extract_run_results(run_path)
+
+    # Extract scores and remove metric names
+    scores = {}
+    for task_name, metrics in results.items():
+        # Take the mean of all metric values for each task
+        if metrics:
+            scores[task_name] = statistics.mean(metrics.values())
+
+    return scores
+
+
 def main():
     """Main function to extract and display all results."""
 

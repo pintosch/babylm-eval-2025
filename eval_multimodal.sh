@@ -33,9 +33,11 @@ python -m evaluation_pipeline.sentence_zero_shot.run --model_path_or_name $MODEL
 # Then add a wrapper to `evaluation_pipeline/devbench/eval.py`.
 # Be sure to submit a pull request so others can benefit from your implementation!
 
-python -m evaluation_pipeline.devbench.eval --model $MODEL_PATH \
-    --model_type $MODEL_VARIANT \
-    --image_model $IMAGE_MODEL
+if [[ "$MODEL_VARIANT" != "qwen" ]]; then
+    python -m evaluation_pipeline.devbench.eval --model $MODEL_PATH \
+        --model_type $MODEL_VARIANT \
+        --image_model $IMAGE_MODEL
+fi
 
 
 
