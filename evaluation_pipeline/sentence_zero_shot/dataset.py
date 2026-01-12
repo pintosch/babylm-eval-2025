@@ -9,6 +9,7 @@ from torch.nn.utils.rnn import pad_sequence
 import argparse
 import json
 from typing import TYPE_CHECKING
+import os
 
 from evaluation_pipeline.sentence_zero_shot.read_files import read_files
 
@@ -371,6 +372,16 @@ class CompletionRankingDataset(Dataset):
             image: Image | None = data_dict["image"]
         else:
             image = None
+        
+        # Save image to tmp folder for inspection
+        # REMOVE LATER
+        # if image is not None:
+        #     tmp_image_dir = "/dss/dssfs05/lwp-dss-0003/pn39je/pn39je-dss-0004/ge78jel2/tmp/babylm_eval_img"
+        #     os.makedirs(tmp_image_dir, exist_ok=True)
+        #     image_hash = idx  # or use a hash function for uniqueness
+        #     image_path = os.path.join(tmp_image_dir, f"image_{image_hash}.png")
+        #     if not os.path.exists(image_path):
+        #         image.save(image_path)
 
         metadata_keys: list[str] = [key for key in data_dict if key not in ["sentences", "completions", "prefixes", "label", "image"]]
         metadata: dict[str, str] = {key : data_dict[key] for key in metadata_keys}

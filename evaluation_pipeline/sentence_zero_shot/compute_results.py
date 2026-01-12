@@ -107,7 +107,9 @@ def compute_causal_results(args, model, dataloader, temperatures):
     if args.images_path is None:
         no_image = True
 
+    # my_index = 0
     for raw_sentences, sentence_dict, labels, metadatas, uids, images in tqdm(dataloader):
+        # mapping_tokens_to_log_probs = dict()
         update_subset_to_stats(subset_to_stats, metadatas)
         num_sentences = len([key for key in sentence_dict.keys() if key.endswith("attn_mask")])
         prefixes = [f'sentence_{sentence_idx}' for sentence_idx in range(num_sentences)]
@@ -138,12 +140,30 @@ def compute_causal_results(args, model, dataloader, temperatures):
                 if args.model_variant and args.model_variant.lower() == "qwen":
                     model_kwargs["image_grid_thw"] = sentence_dict[f"{prefix}_image_grid_thw"].to(DEVICE) if sentence_dict.get(f"{prefix}_image_grid_thw") is not None else None
                 
+                # print("DEBUG: model_kwargs keys", model_kwargs.keys())
+                # print("DEBUG: input_ids shape", model_kwargs["input_ids"].shape)
+                # print("DEBUG: attention_mask shape", model_kwargs["attention_mask"].shape)
+                # if "pixel_values" in model_kwargs:
+                #     print("DEBUG: pixel_values shape", model_kwargs["pixel_values"].shape)
+                # if "image_grid_thw" in model_kwargs:
+                #     print("DEBUG: image_grid_thw shape", model_kwargs["image_grid_thw"].shape)
+                # print("DEBUG: show full kwargs: ", {k: v for k, v in model_kwargs.items()})
                 logits = model(**model_kwargs)
             if isinstance(logits, tuple):
                 logits = logits[0]  # BxTxV
             else:
                 logits = logits["logits"]  # BxTxV
 
+            # print(f"DEBUG: logits shape = {logits.shape}")
+            # print(f"DEBUG: input_ids shape = {sentence_dict[f'{prefix}_inputs'].shape}")
+            # print(f"DEBUG: mismatch = {logits.size(1) != sentence_dict[f'{prefix}_inputs'].size(1)}")
+            # print(f"DEBUG: input_ids sample = {sentence_dict[f'{prefix}_inputs'][0]}")
+            # print(f"DEBUG: phrase_mask sample = {sentence_dict[f'{prefix}_phrase_mask'][0]}")
+            # print(f"DEBUG: num image placeholders in mask = {(sentence_dict[f'{prefix}_phrase_mask'][0] == 0).sum().item()}")
+            # print(f"DEBUG: target positions = {torch.nonzero(sentence_dict[f'{prefix}_phrase_mask'][0])}")
+            # print(f"DEBUG: targets shape = {sentence_dict[f'{prefix}_targets'].shape}")
+            # print(f"DEBUG: targets sample = {sentence_dict[f'{prefix}_targets'][0]}")
+            # print(f"DEBUG: num target tokens = {sentence_dict[f'{prefix}_targets'].shape[1]}")
             if logits.size(1) != sentence_dict[f"{prefix}_inputs"].size(1):  # Assumption is that images are prepended to the text when done post-tokenization.
                 logits = logits[:, -sentence_dict[f"{prefix}_inputs"].size(1):]
 
@@ -151,8 +171,17 @@ def compute_causal_results(args, model, dataloader, temperatures):
                 log_probs = F.log_softmax(logits / temp, dim=-1)
                 target_log_probs = torch.gather(log_probs, -1, sentence_dict[f"{prefix}_targets"].to(DEVICE).unsqueeze(-1)).squeeze(-1)
                 phrase_log_probs = torch.sum(target_log_probs * sentence_dict[f"{prefix}_phrase_mask"].to(DEVICE), dim=1)
+                # mapping_tokens_to_log_probs[str(sentence_dict[f'{prefix}_targets'][0][sentence_dict[f'{prefix}_phrase_mask'][0].bool()].tolist())] = round(phrase_log_probs[0].item(), 2)
+                # print(f"DEBUG: sentence prefix = {prefix}")
+                # print(f"DEBUG: phrase_log_probs sample, token: {sentence_dict[f'{prefix}_targets'][0][sentence_dict[f'{prefix}_phrase_mask'][0].bool()]} with: {round(phrase_log_probs[0].item(), 2)}")
+                # print(f"DEBUG: number of phrase tokens = {sentence_dict[f'{prefix}_phrase_mask'][0].sum().item()}")
+                # print(f"DEBUG: target tokens (apply phrase mask): {sentence_dict[f'{prefix}_targets'][0][sentence_dict[f'{prefix}_phrase_mask'][0].bool()]}")
                 all_log_probs[temp].append(phrase_log_probs.cpu())
-
+        
+        # print(f"DEBUG: mapping of tokens to log probs: {mapping_tokens_to_log_probs}")
+        # print(f"DEBUG: {my_index} --> {max(mapping_tokens_to_log_probs, key=mapping_tokens_to_log_probs.get)}")
+        # my_index += 1
+        
         if "wug" in args.task:
             rank_and_evaluate_wug(args, subset_to_stats, all_log_probs, raw_sentences, labels, metadatas, uids, predictions)
         else:
