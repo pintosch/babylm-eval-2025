@@ -31,7 +31,12 @@ def read_files(args: Namespace) -> list[dict[str, str]]:
     data = []
     images = None
     if args.images_path is not None:
-        images = load_dataset(args.images_path, split=args.image_split, storage_options={'client_kwargs': {'timeout': aiohttp.ClientTimeout(total=3600)}}, trust_remote_code=True)
+        if args.images_path == "HuggingFaceM4/VQAv2":
+            custom_cache_dir = "/dss/dssfs05/lwp-dss-0003/pn39je/pn39je-dss-0004/ge78jel2/tmp/HuggingfaceM4VQAv2"
+            print("DEBUG: Using custom cache directory for VQAv2 dataset")
+            images = load_dataset(args.images_path, split=args.image_split, cache_dir=custom_cache_dir, storage_options={'client_kwargs': {'timeout': aiohttp.ClientTimeout(total=3600)}}, trust_remote_code=True)
+        else:
+            images = load_dataset(args.images_path, split=args.image_split, storage_options={'client_kwargs': {'timeout': aiohttp.ClientTimeout(total=3600)}}, trust_remote_code=True)
     for filename in args.data_path.iterdir():
         if filename.suffix != ".jsonl":
             continue

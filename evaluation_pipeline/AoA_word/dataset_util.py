@@ -35,7 +35,12 @@ class TextPreprocessor:
         self, dataset_name: str, split: str, batch_size: int = 1000
     ):
         """Load and process dataset in batches."""
-        dataset = load_dataset(dataset_name, split=split, trust_remote_code=True)
+        if dataset_name == "HuggingFaceM4/VQAv2":
+            print("DEBUG: Using custom cache directory for VQAv2 dataset")
+            custom_cache_dir = "/dss/dssfs05/lwp-dss-0003/pn39je/pn39je-dss-0004/ge78jel2/tmp/HuggingfaceM4VQAv2"
+            dataset = load_dataset(dataset_name, split=split, cache_dir=custom_cache_dir, trust_remote_code=True)
+        else:
+            dataset = load_dataset(dataset_name, split=split, trust_remote_code=True)
         if "text" not in dataset.column_names:
             raise ValueError(
                 f"'text' column not found in the dataset. Available columns: {dataset.column_names}"
