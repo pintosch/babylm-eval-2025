@@ -16,7 +16,7 @@ class QwenEvalModel(EvalModel):
 
     def get_all_sim_scores(self, dataloader):
         """
-        Gets image--text similarity scores from a dataloader using Qwen model
+        Gets image-text similarity scores from a dataloader using Qwen model
         -----
         Inputs:
         - dataloader: a dataloader constructed from a DevBenchDataset
@@ -81,11 +81,11 @@ class QwenEvalModel(EvalModel):
             for d in tqdm(dataloader, desc="Processing data"):
                 images_rgb = [image.convert("RGB") if image.mode != 'RGB' else image for image in d["images"]]
                 # Use a minimal prompt to get hidden states
-                dummy_texts = [self.processor.image_token + " "] * len(images_rgb)
+                minimal_prompts = [self.processor.image_token + " "] * len(images_rgb)
                 
                 inputs = self.processor(
                     images=images_rgb,
-                    text=dummy_texts,
+                    text=minimal_prompts,
                     return_tensors="pt",
                     padding=True,
                 ).to(self.device)
@@ -120,11 +120,11 @@ class QwenEvalModel(EvalModel):
         all_feats = []
         with torch.no_grad():
             for d in tqdm(dataloader, desc="Processing data"):
-                # Use minimal prompt to get text features
-                dummy_texts = d["text"]
+                # Extract text features
+                texts = d["text"]
                 
                 inputs = self.processor.tokenizer(
-                    dummy_texts,
+                    texts,
                     return_tensors="pt",
                     padding=True,
                     truncation=True,
