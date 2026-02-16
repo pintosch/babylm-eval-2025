@@ -22,6 +22,7 @@ class CompletionRankingDataset(Dataset):
 
     def __init__(self: CompletionRankingDataset, args: argparse.Namespace):
         self.backend: str = args.backend
+        self.task: str = args.task
         self.processor: ProcessorMixin = AutoProcessor.from_pretrained(args.model_path_or_name, padding_side="right", revision=args.revision_name, trust_remote_code=True)
         self.tokenizer = self.processor.tokenizer if hasattr(self.processor, "tokenizer") else self.processor
         # Use model_variant parameter to determine if this is a Qwen VL model
@@ -52,7 +53,7 @@ class CompletionRankingDataset(Dataset):
         self.data: list[dict[str, str | int | list[str] | list[None] | Image]] = read_files(args)
         #### DEBUG TO SPEED VQA UP
         if args.task == "vqa": 
-            self.data = self.data[:1000]  # only keep the first 1000 examples for VQA
+            self.data = self.data[:10000]  # only keep the first 10k examples for VQA
 
     def __len__(self: CompletionRankingDataset):
         return len(self.data)
@@ -78,7 +79,15 @@ class CompletionRankingDataset(Dataset):
                     image_sentence = self.image_template.format(image_token=self.image_token, text=sentence)
                 else:
                     image_sentence = sentence
-                tokenizer_output = self.processor(text=image_sentence, images=image, return_offsets_mapping=True)
+                if self.task == "winoground":
+                    tokenizer_output = self.processor(
+                        text=image_sentence,
+                        images=image,
+                        return_offsets_mapping=True,
+                        truncation=False,
+                    )
+                else:
+                    tokenizer_output = self.processor(text=image_sentence, images=image, return_offsets_mapping=True)
                 sentence_tokens = self.processor(text=sentence, return_offsets_mapping=True)["input_ids"]
             tokens = tokenizer_output["input_ids"]
             attention_mask = tokenizer_output["attention_mask"]
