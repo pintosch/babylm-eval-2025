@@ -15,5 +15,8 @@ source ~/.bashrc
 conda activate babylm
 
 # Winoground and VQA
-#python -m evaluation_pipeline.sentence_zero_shot.run --model_path_or_name $MODEL_PATH --backend $BACKEND --task vqa --data_path "evaluation_data/full_eval/vqa_filtered" --save_predictions --images_path=HuggingFaceM4/VQAv2 --image_split=validation --batch_size=1 $MODEL_VARIANT_PARAM
+python -m evaluation_pipeline.sentence_zero_shot.run --model_path_or_name $MODEL_PATH --backend $BACKEND --task vqa --data_path "evaluation_data/full_eval/vqa_filtered" --save_predictions --images_path=HuggingFaceM4/VQAv2 --image_split=validation --batch_size=1 $MODEL_VARIANT_PARAM
 python -m evaluation_pipeline.sentence_zero_shot.run --model_path_or_name $MODEL_PATH --backend $BACKEND --task winoground --data_path "evaluation_data/full_eval/winoground_filtered" --save_predictions --images_path=facebook/winoground --image_split=test --batch_size=1 $MODEL_VARIANT_PARAM
+
+# Devbench
+./eval_devbench.sh $MODEL_PATH $MODEL_VARIANT None
