@@ -12,6 +12,10 @@ IMAGE_MODEL=${3:-$MODEL_PATH}
 # Then add a wrapper to `evaluation_pipeline/devbench/eval.py`.
 # Be sure to submit a pull request so others can benefit from your implementation!
 
+echo "Starting Devbench evaluation."
+
 python -m evaluation_pipeline.devbench.eval --model $MODEL_PATH \
     --model_type $MODEL_TYPE \
     --image_model $IMAGE_MODEL
+
+echo "Devbench evaluation completed."

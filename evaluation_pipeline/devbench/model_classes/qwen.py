@@ -32,25 +32,26 @@ class QwenEvalModel(EvalModel):
 
                 for i, image in enumerate(d["images"]):
                     # Convert image to RGB if it's not already in that format
-                    if image.mode != 'RGB':
-                        image = image.convert('RGB')
-                    
+                    if image.mode != "RGB":
+                        image = image.convert("RGB")
+
                     for j, text in enumerate(d["text"]):
                         # Format prompt similar to BabyLM models
                         prompt = f"The caption for this image is: {text}."
                         prompt_with_image = f"{self.processor.image_token}{prompt}"
-                        
+
                         # Process inputs
                         inputs = self.processor(
                             images=image,
                             text=prompt_with_image,
                             return_tensors="pt",
+                            truncation=False,
                         ).to(self.device)
-                        
+
                         # Create labels: mask image tokens, only compute loss on text tokens
                         labels = inputs.input_ids.clone()
                         labels[inputs.input_ids == self.processor.image_token_id] = -100
-                        
+
                         # Forward pass
                         outputs = self.model(
                             input_ids=inputs.input_ids,
@@ -59,7 +60,7 @@ class QwenEvalModel(EvalModel):
                             image_grid_thw=inputs.get("image_grid_thw"),
                             labels=labels,
                         )
-                        
+
                         # Use negative loss as similarity score (higher is better)
                         sims[i, j] = -outputs.loss.detach().cpu().numpy()
 
@@ -79,20 +80,24 @@ class QwenEvalModel(EvalModel):
         all_feats = []
         with torch.no_grad():
             for d in tqdm(dataloader, desc="Processing data"):
-                images_rgb = [image.convert("RGB") if image.mode != 'RGB' else image for image in d["images"]]
+                images_rgb = [
+                    image.convert("RGB") if image.mode != "RGB" else image
+                    for image in d["images"]
+                ]
                 # Use a minimal prompt to get hidden states
                 minimal_prompts = [self.processor.image_token + " "] * len(images_rgb)
-                
+
                 inputs = self.processor(
                     images=images_rgb,
                     text=minimal_prompts,
                     return_tensors="pt",
                     padding=True,
+                    truncation=False,
                 ).to(self.device)
-                
+
                 labels = inputs.input_ids.clone()
                 labels[inputs.input_ids == self.processor.image_token_id] = -100
-                
+
                 outputs = self.model(
                     input_ids=inputs.input_ids,
                     attention_mask=inputs.attention_mask,
@@ -100,7 +105,7 @@ class QwenEvalModel(EvalModel):
                     image_grid_thw=inputs.get("image_grid_thw"),
                     output_hidden_states=True,
                 )
-                
+
                 # Mean pool the last hidden state
                 hidden_states = outputs.hidden_states[-1]
                 mean_feats = hidden_states.mean(dim=1).detach().cpu().numpy()
@@ -122,20 +127,20 @@ class QwenEvalModel(EvalModel):
             for d in tqdm(dataloader, desc="Processing data"):
                 # Extract text features
                 texts = d["text"]
-                
+
                 inputs = self.processor.tokenizer(
                     texts,
                     return_tensors="pt",
                     padding=True,
-                    truncation=True,
+                    truncation=False,
                 ).to(self.device)
-                
+
                 outputs = self.model.model.language_model(
                     input_ids=inputs.input_ids,
                     attention_mask=inputs.attention_mask,
                     output_hidden_states=True,
                 )
-                
+
                 # Mean pool the last hidden state
                 hidden_states = outputs.hidden_states[-1]
                 mean_feats = hidden_states.mean(dim=1).detach().cpu().numpy()
