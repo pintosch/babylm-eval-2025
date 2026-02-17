@@ -33,12 +33,8 @@ python -m evaluation_pipeline.sentence_zero_shot.run --model_path_or_name $MODEL
 # Then add a wrapper to `evaluation_pipeline/devbench/eval.py`.
 # Be sure to submit a pull request so others can benefit from your implementation!
 
-if [[ "$MODEL_VARIANT" != "qwen" ]]; then
-    python -m evaluation_pipeline.devbench.eval --model $MODEL_PATH \
-        --model_type $MODEL_VARIANT \
-        --image_model $IMAGE_MODEL
-fi
-
-
+python -m evaluation_pipeline.devbench.eval --model $MODEL_PATH \
+    --model_type $MODEL_VARIANT \
+    --image_model $IMAGE_MODEL
 
 # ./eval_multimodal.sh <path_to_model> <architecture (causal/mntp/mlm/enc_dec_mask/enc_dec_prefix)> <model_variant (git/flamingo/llava/flava/clip/blip/siglip/bridgetower/vilt/cvcl/qwen)> [image_model]
