@@ -3,7 +3,7 @@ import os
 import sys
 
 # Add training-pipeline to Python path for imports
-training_pipeline_path = "/dss/dsshome1/0C/ge78jel2/babylm/training-pipeline"
+training_pipeline_path = os.environ.get("TRAINING_PIPELINE_ROOT")
 sys.path.insert(0, training_pipeline_path)
 os.chdir(training_pipeline_path)
 
