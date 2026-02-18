@@ -78,6 +78,7 @@ class QwenEvalModel(EvalModel):
         - a numpy array of shape [num_images, embed_dim]
         """
         all_feats = []
+        batch_size = 4
         with torch.no_grad():
             for d in tqdm(dataloader, desc="Processing data"):
                 images_rgb = [
@@ -87,29 +88,34 @@ class QwenEvalModel(EvalModel):
                 # Use a minimal prompt to get hidden states
                 minimal_prompts = [self.processor.image_token + " "] * len(images_rgb)
 
-                inputs = self.processor(
-                    images=images_rgb,
-                    text=minimal_prompts,
-                    return_tensors="pt",
-                    padding=True,
-                    truncation=False,
-                ).to(self.device)
+                for start in range(0, len(images_rgb), batch_size):
+                    end = start + batch_size
+                    batch_images = images_rgb[start:end]
+                    batch_prompts = minimal_prompts[start:end]
 
-                labels = inputs.input_ids.clone()
-                labels[inputs.input_ids == self.processor.image_token_id] = -100
+                    inputs = self.processor(
+                        images=batch_images,
+                        text=batch_prompts,
+                        return_tensors="pt",
+                        padding=True,
+                        truncation=False,
+                    ).to(self.device)
 
-                outputs = self.model(
-                    input_ids=inputs.input_ids,
-                    attention_mask=inputs.attention_mask,
-                    pixel_values=inputs.get("pixel_values"),
-                    image_grid_thw=inputs.get("image_grid_thw"),
-                    output_hidden_states=True,
-                )
+                    labels = inputs.input_ids.clone()
+                    labels[inputs.input_ids == self.processor.image_token_id] = -100
 
-                # Mean pool the last hidden state
-                hidden_states = outputs.hidden_states[-1]
-                mean_feats = hidden_states.mean(dim=1).detach().cpu().numpy()
-                all_feats.append(mean_feats)
+                    outputs = self.model(
+                        input_ids=inputs.input_ids,
+                        attention_mask=inputs.attention_mask,
+                        pixel_values=inputs.get("pixel_values"),
+                        image_grid_thw=inputs.get("image_grid_thw"),
+                        output_hidden_states=True,
+                    )
+
+                    # Mean pool the last hidden state
+                    hidden_states = outputs.hidden_states[-1]
+                    mean_feats = hidden_states.mean(dim=1).detach().cpu().numpy()
+                    all_feats.append(mean_feats)
 
         return np.concatenate(all_feats, axis=0)
 
