@@ -7,12 +7,10 @@ training_pipeline_path = os.environ.get("TRAINING_PIPELINE_ROOT")
 sys.path.insert(0, training_pipeline_path)
 os.chdir(training_pipeline_path)
 
-import json
+import csv
 from pathlib import Path
-from typing import Dict, Any
 from src.configs import Config
 from src.utils.evaluation import (
-    get_evaluation_results,
     display_runs_summary,
     extract_run_results,
 )
@@ -52,8 +50,35 @@ def main():
 
     print(f"\nSuccessfully extracted results from {len(all_runs)} runs.\n")
 
-    # Display results
-    display_runs_summary(all_runs)
+    # Display results and get exportable data
+    export_rows = display_runs_summary(all_runs)
+
+    # Save results to CSV
+    save_results_to_csv(export_rows, RESULTS_DIR)
+
+
+def save_results_to_csv(export_rows: list, results_dir: Path) -> None:
+    """Save results to CSV file (one run per row)."""
+    if not export_rows:
+        return
+
+    # Extract all fieldnames from rows
+    fieldnames = ["run"]
+    fieldnames_set = {"run"}
+    for row in export_rows:
+        for key in row.keys():
+            if key not in fieldnames_set:
+                fieldnames.append(key)
+                fieldnames_set.add(key)
+
+    output_path = results_dir / "all_runs_results.csv"
+
+    with output_path.open("w", newline="") as csv_file:
+        writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
+        writer.writeheader()
+        writer.writerows(export_rows)
+
+    print(f"Saved CSV results to {output_path}")
 
 
 if __name__ == "__main__":
