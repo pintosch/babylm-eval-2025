@@ -1,5 +1,5 @@
 from transformers import AutoModelForCausalLM, AutoModelForMaskedLM, AutoTokenizer, AutoModelForSeq2SeqLM, AutoProcessor
-from transformers import AutoModelForVision2Seq
+from transformers import AutoModelForImageTextToText
 from evaluation_pipeline.reading.evaluation_functions import get_p2_mntp, get_p2, get_p2_mlm, get_p2_enc_dec
 from tqdm import tqdm
 import pandas as pd
@@ -52,7 +52,7 @@ if __name__ == "__main__":
     if args.backend == "causal":
         # Check if model is a Qwen VL model based on model_variant parameter
         if args.model_variant and args.model_variant.lower() == "qwen":
-            model = AutoModelForVision2Seq.from_pretrained(args.model_path_or_name, trust_remote_code=True, revision=args.revision_name)
+            model = AutoModelForImageTextToText.from_pretrained(args.model_path_or_name, trust_remote_code=True, revision=args.revision_name)
         else:
             model = AutoModelForCausalLM.from_pretrained(args.model_path_or_name, trust_remote_code=True, revision=args.revision_name)
     elif args.backend in ["mlm", "mntp"]:

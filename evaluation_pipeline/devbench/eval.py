@@ -129,10 +129,10 @@ if __name__ == "__main__":
     
     elif args.model_type == "qwen":
         from evaluation_pipeline.devbench.model_classes.qwen import QwenEvalModel
-        from transformers import AutoProcessor, AutoModelForVision2Seq
+        from transformers import AutoProcessor, AutoModelForImageTextToText
 
         eval_model = QwenEvalModel(
-            model=AutoModelForVision2Seq.from_pretrained(args.model, trust_remote_code=True),
+            model=AutoModelForImageTextToText.from_pretrained(args.model, trust_remote_code=True),
             processor=AutoProcessor.from_pretrained(args.model, trust_remote_code=True),
             device="cuda" if torch.cuda.is_available() else "cpu",
         )
