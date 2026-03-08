@@ -214,9 +214,9 @@ def _check_validity_of_dirs(args):
 
 
 def _check_validity_of_dir(args: argparse.Namespace, revision_name: str, fast: bool) -> bool:
-    finetune_path = args.results_dir / args.model_path_or_name.stem / revision_name / "finetune"
-    zero_shot_path = args.results_dir / args.model_path_or_name.stem / revision_name / "zero_shot" / args.backend
-    devbench_path = args.results_dir / args.model_path_or_name.stem / revision_name / "zero_shot"
+    finetune_path = args.results_dir / args.model_path_or_name.name / revision_name / "finetune"
+    zero_shot_path = args.results_dir / args.model_path_or_name.name / revision_name / "zero_shot" / args.backend
+    devbench_path = args.results_dir / args.model_path_or_name.name / revision_name / "zero_shot"
     valid = True
 
     if fast:
@@ -398,16 +398,16 @@ def collate_preds(args: argparse.Namespace) -> None:
         fast_eval_results = get_fast_eval_metrics(args)
         full_results["fast_eval_results"] = fast_eval_results
 
-    output_path: pathlib.Path = args.results_dir / args.model_path_or_name.stem / f"all_full_preds_and_fast_scores_{args.backend}.json"
+    output_path: pathlib.Path = args.results_dir / args.model_path_or_name.name / f"all_full_preds_and_fast_scores_{args.backend}.json"
     with output_path.open("w") as f:
         json.dump(full_results, f)
 
 
 def collate_full_eval_preds(args):
     full_results = {}
-    zero_main_path: pathlib.Path = args.results_dir / args.model_path_or_name.stem / args.revision_name / "zero_shot" / args.backend
-    devbench_path: pathlib.Path = args.results_dir / args.model_path_or_name.stem / args.revision_name / "zero_shot"
-    fine_main_path: pathlib.Path = args.results_dir / args.model_path_or_name.stem / args.revision_name / "finetune"
+    zero_main_path: pathlib.Path = args.results_dir / args.model_path_or_name.name / args.revision_name / "zero_shot" / args.backend
+    devbench_path: pathlib.Path = args.results_dir / args.model_path_or_name.name / args.revision_name / "zero_shot"
+    fine_main_path: pathlib.Path = args.results_dir / args.model_path_or_name.name / args.revision_name / "finetune"
 
     # BLiMP
     blimp_results: dict[str, dict[str, list[dict[str, str | int | float]]]] = _load_results(zero_main_path / "blimp" / "blimp_filtered" / "predictions.json")
@@ -513,7 +513,7 @@ def get_fast_eval_metrics(args):
 
 def get_revision_fast_eval_metrics(args, revision_name):
     revision_results = {}
-    main_path: pathlib.Path = args.results_dir / args.model_path_or_name.stem / revision_name / "zero_shot" / args.backend
+    main_path: pathlib.Path = args.results_dir / args.model_path_or_name.name / revision_name / "zero_shot" / args.backend
     data_path: pathlib.Path = args.fast_eval_dir
 
     # BLiMP

@@ -75,7 +75,7 @@ def parse_args() -> argparse.Namespace:
 
 def config_paths(args) -> tuple[Path, Path | None]:
     """Initialize paths for results and resume files."""
-    model_name = pathlib.Path(args.model_name).stem
+    model_name = pathlib.Path(args.model_name).name
     full_output_dir = (
         args.output_dir / model_name / "main" / "zero_shot" / args.backend / "AoA_word"
     )

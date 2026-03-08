@@ -277,7 +277,7 @@ def _calculate_aoa_results(
 if __name__ == "__main__":
     args = _parse_arguments()
     path_to_results = (
-        args.results_dir / args.model_path_or_name.stem / args.revision_name
+        args.results_dir / args.model_path_or_name.name / args.revision_name
     )
     if args.fast:
         path_to_results = path_to_results / f"all_fast_preds_{args.backend}.json"
