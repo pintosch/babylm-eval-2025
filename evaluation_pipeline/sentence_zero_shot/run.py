@@ -58,6 +58,7 @@ def get_model(args: argparse.ArgumentParser):
     else:
         raise f"The backend {args.backend} is not implemented, please implemented yourself or raise an issue on the GitHub!"
     model = model.to(DEVICE)
+    print("Using device:", DEVICE)
     model.eval()
 
     return model
