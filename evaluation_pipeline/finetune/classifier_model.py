@@ -78,7 +78,31 @@ class ModelForSequenceClassification(nn.Module):
         model_config = AutoConfig.from_pretrained(config.model_name_or_path, trust_remote_code=True, revision=config.revision_name)
         if self.enc_dec:
             self.decoder_start_token_id = model_config.decoder_start_token_id
-        hidden_size = model_config.hidden_size
+        
+        # Robustly get hidden_size from various config structures
+        hidden_size = None
+        # Try direct attribute access
+        if hasattr(model_config, 'hidden_size'):
+            hidden_size = model_config.hidden_size
+        # Try text_config for vision-language models
+        elif hasattr(model_config, 'text_config') and hasattr(model_config.text_config, 'hidden_size'):
+            hidden_size = model_config.text_config.hidden_size
+        # Try other common attribute names
+        elif hasattr(model_config, 'd_model'):
+            hidden_size = model_config.d_model
+        elif hasattr(model_config, 'n_embd'):
+            hidden_size = model_config.n_embd
+        # Try to infer from model structure
+        elif hasattr(self.transformer, 'config') and hasattr(self.transformer.config, 'to_dict'):
+            config_dict = self.transformer.config.to_dict()
+            if 'hidden_size' in config_dict:
+                hidden_size = config_dict['hidden_size']
+        
+        if hidden_size is None:
+            raise AttributeError(f"Could not find hidden_size in config for model {config.model_name_or_path}. "
+                               f"Config type: {type(model_config).__name__}. "
+                               f"Available attributes: {[k for k in dir(model_config) if not k.startswith('_')]}")
+        
         self.classifier: nn.Module = ClassifierHead(config, hidden_size)
         self.take_final: bool = config.take_final
 
@@ -108,6 +132,7 @@ class ModelForSequenceClassification(nn.Module):
             decoder_attention_mask = attention_mask.new_ones((batch_size, 1))
             output_transformer: Any = self.transformer(input_ids=input_data, attention_mask=attention_mask, decoder_input_ids=decoder_input_ids, decoder_attention_mask=decoder_attention_mask)
         else:
+            #print("DEBUG: input_data shape", input_data.shape, flush=True)
             output_transformer = self.transformer(input_ids=input_data, attention_mask=attention_mask)
         if type(output_transformer) is tuple:
             encoding: torch.Tensor = output_transformer[0]
@@ -131,6 +156,12 @@ class ModelForSequenceClassification(nn.Module):
             transformer_output: torch.Tensor = encoding[final_position].diagonal().t()
         else:
             transformer_output = encoding[:, 0]
+        
+        # Ensure dtype compatibility with classifier head
+        # Get the dtype of the first Linear layer in the classifier
+        classifier_dtype = next(self.classifier.parameters()).dtype
+        transformer_output = transformer_output.to(dtype=classifier_dtype)
+        
         logits: torch.Tensor = self.classifier(transformer_output)
 
         return logits

@@ -1,6 +1,15 @@
 #!/bin/bash
+#SBATCH --partition lrz-dgx-a100-80x8
+#SBATCH --gres gpu:1
+#SBATCH --time 0-1:47:00
+#SBATCH --output ./jobs-out/%j.out
 
-MODEL_PATH=$1
+source ~/.bashrc
+conda activate experimental
+
+# lrz-hgx-a100-80x4 or lrz-hgx-h100-94x4 or lrz-dgx-a100-80x8
+
+MODEL_PATH=${1:-"/dss/dssfs05/lwp-dss-0003/pn39je/pn39je-dss-0004/ge78jel2/models/Qwen3.5-0.8B-Base"}
 LR=${2:-3e-5}           # default: 3e-5
 BSZ=${3:-32}            # default: 32
 BIG_BSZ=${4:-16}        # default: 16

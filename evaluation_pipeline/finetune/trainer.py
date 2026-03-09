@@ -9,7 +9,7 @@ from functools import partial
 
 import torch
 from torch.nn import functional as F
-from transformers import AutoProcessor
+from transformers import AutoProcessor, AutoTokenizer
 from torch.utils.data import DataLoader
 from torch.optim import AdamW
 
@@ -82,7 +82,13 @@ class Trainer():
 
         self.model.to(self.device)
         self.ema_model.to(self.device)
-        self.tokenizer: PreTrainedTokenizerBase = AutoProcessor.from_pretrained(self.args.model_name_or_path, trust_remote_code=True, padding_side=self.args.padding_side)
+        
+        # Use AutoTokenizer directly for text-only finetuning (works for all model types)
+        self.tokenizer: PreTrainedTokenizerBase = AutoTokenizer.from_pretrained(
+            self.args.model_name_or_path, 
+            trust_remote_code=True, 
+            padding_side=self.args.padding_side
+        )
 
     def load_data(self: Trainer) -> None:
         """This function loads the data and creates the
@@ -168,6 +174,8 @@ class Trainer():
                     for param_q, param_k in zip(self.model.parameters(), self.ema_model.parameters()):
                         param_k.data.mul_(self.args.ema_decay).add_((1.0 - self.args.ema_decay) * param_q.detach().data)
 
+            #print("DEBUG: shape of logits", logits.shape, flush=True)
+            #print("DEBUG: shape of labels", labels.shape, flush=True)
             metrics = self.calculate_metrics(logits, labels, self.args.metrics)
 
             if hasattr(self, "wandb_run"):
