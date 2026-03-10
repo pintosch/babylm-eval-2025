@@ -17,6 +17,8 @@ MAX_EPOCHS=${5:-10}     # default: 10
 WSC_EPOCHS=${6:-30}     # default: 30
 SEED=${7:-42}           # default: 42
 
+echo "Model path: $MODEL_PATH"
+
 model_basename=$(basename $MODEL_PATH)
 
 for task in {boolq,multirc}; do
