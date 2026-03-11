@@ -7,7 +7,7 @@ training_pipeline_path = os.environ.get("TRAINING_PIPELINE_ROOT")
 sys.path.insert(0, training_pipeline_path)
 os.chdir(training_pipeline_path)
 
-import csv
+import pandas as pd
 from pathlib import Path
 from src.configs import Config
 from src.utils.evaluation import (
@@ -55,8 +55,12 @@ def main():
     # Display zero-shot results and get exportable data
     export_rows = display_runs_summary(all_runs)
 
-    # Save zero-shot results to CSV
-    save_results_to_csv(export_rows, RESULTS_DIR, "all_runs_results.csv")
+    if export_rows:
+        df_zero_shot = pd.DataFrame(export_rows).set_index("run")
+        df_zero_shot.to_csv(RESULTS_DIR / "all_runs_results.csv")
+        print(f"Saved zero-shot results to {RESULTS_DIR / 'all_runs_results.csv'}")
+    else:
+        print("No zero-shot results to export.")
 
     # Extract and display finetuning results
     print(f"\nExtracting finetuning results from {len(all_runs)} runs...\n")
@@ -71,37 +75,22 @@ def main():
             print("⚠ No finetuning results found")
 
     if finetuning_runs:
-        print(f"\nSuccessfully extracted finetuning results from {len(finetuning_runs)} runs.\n")
+        print(
+            f"\nSuccessfully extracted finetuning results from {len(finetuning_runs)} runs.\n"
+        )
         # Display finetuning results and get exportable data
         finetuning_export_rows = display_finetuning_runs_summary(finetuning_runs)
-        # Save finetuning results to CSV
-        save_results_to_csv(finetuning_export_rows, RESULTS_DIR, "finetuning_results.csv")
+
+        df_finetuning = pd.DataFrame(finetuning_export_rows).set_index("run")
+
+        df_finetuning.to_csv(RESULTS_DIR / "finetuning_results.csv")
+        df_zero_shot.join(df_finetuning, how="outer").to_csv(
+            RESULTS_DIR / "merged_results.csv"
+        )
+
+        print(f"Saved CSVs to {RESULTS_DIR}")
     else:
         print("No finetuning results found in any runs.")
-
-
-def save_results_to_csv(export_rows: list, results_dir: Path, filename: str = "results.csv") -> None:
-    """Save results to CSV file (one run per row)."""
-    if not export_rows:
-        return
-
-    # Extract all fieldnames from rows
-    fieldnames = ["run"]
-    fieldnames_set = {"run"}
-    for row in export_rows:
-        for key in row.keys():
-            if key not in fieldnames_set:
-                fieldnames.append(key)
-                fieldnames_set.add(key)
-
-    output_path = results_dir / filename
-
-    with output_path.open("w", newline="") as csv_file:
-        writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
-        writer.writeheader()
-        writer.writerows(export_rows)
-
-    print(f"Saved CSV results to {output_path}")
 
 
 if __name__ == "__main__":
