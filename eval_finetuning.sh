@@ -1,8 +1,8 @@
 #!/bin/bash
 #SBATCH --partition lrz-dgx-a100-80x8
 #SBATCH --gres gpu:1
-#SBATCH --time 0-1:47:00
-#SBATCH --output ./jobs-out/%j.out
+#SBATCH --time 0-3:47:00
+#SBATCH --output ../jobs-out/%j.out
 
 source ~/.bashrc
 conda activate experimental
@@ -35,12 +35,11 @@ for task in {boolq,multirc}; do
         --num_epochs $MAX_EPOCHS \
         --sequence_length 512 \
         --results_dir "results" \
-        --save \
-        --save_dir "models" \
         --metrics accuracy f1 mcc \
         --metric_for_valid accuracy \
         --seed $SEED \
-        --verbose
+        --verbose \
+        --wandb
 done
 
 python -m evaluation_pipeline.finetune.run \
@@ -55,12 +54,11 @@ python -m evaluation_pipeline.finetune.run \
     --num_epochs $MAX_EPOCHS \
     --sequence_length 512 \
     --results_dir "results" \
-    --save \
-    --save_dir "models" \
     --metrics accuracy f1 mcc \
     --metric_for_valid accuracy \
     --seed $SEED \
-    --verbose
+    --verbose \
+    --wandb
 
 python -m evaluation_pipeline.finetune.run \
     --model_name_or_path "$MODEL_PATH" \
@@ -74,12 +72,11 @@ python -m evaluation_pipeline.finetune.run \
     --num_epochs $WSC_EPOCHS \
     --sequence_length 512 \
     --results_dir "results" \
-    --save \
-    --save_dir "models" \
     --metrics accuracy f1 mcc \
     --metric_for_valid accuracy \
     --seed $SEED \
-    --verbose
+    --verbose \
+    --wandb
 
 for task in {mrpc,qqp}; do
         
@@ -95,12 +92,11 @@ for task in {mrpc,qqp}; do
         --num_epochs $MAX_EPOCHS \
         --sequence_length 512 \
         --results_dir "results" \
-        --save \
-        --save_dir "models" \
         --metrics accuracy f1 mcc \
         --metric_for_valid f1 \
         --seed $SEED \
-        --verbose
+        --verbose \
+        --wandb
 done
 
 python -m evaluation_pipeline.finetune.run \
@@ -115,9 +111,8 @@ python -m evaluation_pipeline.finetune.run \
     --num_epochs $MAX_EPOCHS \
     --sequence_length 512 \
     --results_dir "results" \
-    --save \
-    --save_dir "models" \
     --metrics accuracy \
     --metric_for_valid accuracy \
     --seed $SEED \
-    --verbose
+    --verbose \
+    --wandb
