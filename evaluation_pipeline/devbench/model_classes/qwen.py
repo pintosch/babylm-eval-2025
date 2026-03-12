@@ -62,7 +62,7 @@ class QwenEvalModel(EvalModel):
                         )
 
                         # Use negative loss as similarity score (higher is better)
-                        sims[i, j] = -outputs.loss.detach().cpu().numpy()
+                        sims[i, j] = -float(outputs.loss.detach().float().cpu().item())
 
                 all_sims.append(sims)
 
@@ -114,7 +114,9 @@ class QwenEvalModel(EvalModel):
 
                     # Mean pool the last hidden state
                     hidden_states = outputs.hidden_states[-1]
-                    mean_feats = hidden_states.mean(dim=1).detach().cpu().numpy()
+                    mean_feats = (
+                        hidden_states.mean(dim=1).detach().float().cpu().numpy()
+                    )
                     all_feats.append(mean_feats)
 
         return np.concatenate(all_feats, axis=0)
@@ -149,7 +151,7 @@ class QwenEvalModel(EvalModel):
 
                 # Mean pool the last hidden state
                 hidden_states = outputs.hidden_states[-1]
-                mean_feats = hidden_states.mean(dim=1).detach().cpu().numpy()
+                mean_feats = hidden_states.mean(dim=1).detach().float().cpu().numpy()
                 all_feats.append(mean_feats)
 
         return np.concatenate(all_feats, axis=0)
