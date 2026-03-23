@@ -3,6 +3,7 @@
 
 import os
 import sys
+import argparse
 from math import isclose
 from pathlib import Path
 from typing import Dict, List, Set
@@ -104,13 +105,42 @@ def _log_metrics_to_run(run_id: str, metrics: Dict[str, float], dry_run: bool) -
     return
 
 
+def parse_args():
+    parser = argparse.ArgumentParser(
+        description="Run vision benchmark for a VLM checkpoint."
+    )
+    parser.add_argument(
+        "--vlm_path",
+        required=True,
+        type=str,
+        help="Path or Hugging Face model ID for the VLM.",
+    )
+    return parser.parse_args()
+
+
 def main() -> None:
     # Configure run behavior here instead of via CLI arguments.
-    runs: List[str] | str | None = "run_v20260303_161337_15ffe0"
+    # runs: List[str] | str | None = "run_v20260303_161337_15ffe0"
+
+    # only_metrics: List[str] = ["metric_name_1", "metric_name_2"]
+    # Keep empty to log all collected metrics.
+    only_metrics = [
+        "I2C_recall_1",
+        "C2I_recall_1",
+        "I2C_num_samples",
+        "C2I_num_samples",
+    ]
+
+    args = parse_args()
+    model_path = (
+        args.vlm_path
+    )  # "/dss/dssfs05/lwp-dss-0003/pn39je/pn39je-dss-0004/ge78jel2/models/run123"
+    runs = os.path.basename(model_path)
+
     dry_run = False
     first_match_only = False
 
-    include_finetune = True
+    include_finetune = False
     config = Config()
     results_dir = Path(config.get("babylm_eval.results"))
 
@@ -151,8 +181,16 @@ def main() -> None:
         metrics = _collect_metrics(
             run_name, config=config, include_finetune=include_finetune
         )
+        if only_metrics:
+            allowed = set(only_metrics)
+            metrics = {key: value for key, value in metrics.items() if key in allowed}
         if not metrics:
-            print("  Skipped: no evaluation metrics found.")
+            if only_metrics:
+                print(
+                    "  Skipped: none of the requested metric names were found for this run."
+                )
+            else:
+                print("  Skipped: no evaluation metrics found.")
             continue
 
         print(
