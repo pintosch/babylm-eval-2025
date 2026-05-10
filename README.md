@@ -1,3 +1,24 @@
+# Change Summary Since Initial Commit - Emil's Contribution
+
+This README summarizes the key modifications and additions made to the BabyLM 2025 evaluation pipeline repository. It is a fork of the original repository:
+ https://github.com/babylm/evaluation-pipeline-2025
+
+- Support for Qwen3-VL model, including model and tokenizer handling, as well
+as adapting the specific input formats for evaluation.
+- Run-detection of evaluated models and metrics to avoid redundant evaluations. This is useful if the evaluation is interrupted because the evaluation can be resumed where it left off.
+- Post-run logging of results to the experiment tracking system.
+- Restrictions on the number of samples used for VQA evaluation to 10,000 sam-
+ples, due to computational constraints and the addition of more multimodal
+benchmarks: I2C and C2I.
+- Added devbench qwen model wrappers for multimodal benchmarks
+- Added utility scripts for evaluation support, including:
+    - `utils/run_vision_benchmark.py`: on-demand vision benchmark execution,
+    - `utils/log_eval_metrics_to_mlflow.py`: post-eval metric logging/sync to MLflow
+    - download helper scripts
+    - results aggregation script for run performance comparison
+
+These contributions tailor the evaluation pipeline to better accommodate the Qwen3-VL model and enhance the overall experiment management.
+
 # 2025 BabyLM Challenge Evaluation Pipeline
 
 ![BabyLM Challenge](assets/babylm.png)
